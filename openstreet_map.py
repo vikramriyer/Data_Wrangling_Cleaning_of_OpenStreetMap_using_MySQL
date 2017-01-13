@@ -10,7 +10,7 @@ import pprint
 import cerberus
 import schema
 
-#files
+# files
 OSM_FILE = "pune_india.osm"
 NODES_PATH = "nodes.csv"
 NODE_TAGS_PATH = "nodes_tags.csv"
@@ -40,10 +40,11 @@ mapping = {
     "road": "Road"
 }
 
-
+# The data obtained from this function will directly dumped into csv files, which in
+# turn will be loaded into mysql
 def shape_element(element, node_attr_fields=NODE_FIELDS, way_attr_fields=WAY_FIELDS):
+    """ Returns values corresponding to the schema tables"""
 
-    # have to set node_attribs, tags, way_attribs, way_nodes, way_tags
     if element.tag == 'node':
         node_attribs, tags = set_node_attributes(element)
         return {'node': node_attribs, 'node_tags': tags}
@@ -51,6 +52,7 @@ def shape_element(element, node_attr_fields=NODE_FIELDS, way_attr_fields=WAY_FIE
         way_attribs, way_nodes, tags = set_way_attributes(element)
         return {'way': way_attribs, 'way_nodes': way_nodes, 'way_tags': tags}
 
+# Uses the above shape_element function to write to csv's
 def process_map(file_in, validate):
     """Iteratively process each XML element and write to csv(s)"""
 
@@ -93,13 +95,14 @@ def process_map(file_in, validate):
                     way_nodes_writer.writerows(el['way_nodes'])
                     way_tags_writer.writerows(el['way_tags'])
 
-        #print all_elements_file
+#===================================================================================
+#                                  Helpers                                         =
+#===================================================================================
 
-#####################################################################################
-##                                  Helpers                                        ##
-#####################################################################################
-
+# The function will contribute to ways, ways_tags and ways_nodes tables in mysql
 def set_way_attributes(element):
+    """Returns a shaped element to fit the corresponding mysql table for 'way' element"""
+
     way_attributes = {}
     way_nodes = []
     tags = []
@@ -135,8 +138,10 @@ def set_way_attributes(element):
 
     return way_attributes, way_nodes, tags
 
-
+# The function will contribute to nodes and nodes_tags tables in mysql
 def set_node_attributes(element):
+    """Returns a shaped element to fit the corresponding mysql table for 'node' element"""
+
     node_attributes = {}
     tags = []
 
@@ -168,6 +173,9 @@ def set_node_attributes(element):
 
     return node_attributes, tags
 
+# Important function which is faster than usage of list which stores the elements in memory.
+# Using the "yield" will ensure that the data once accessed will be erased rather than storing
+# in memory till the process releases resources after its termination
 def get_element(osm_file, tags=('node', 'way', 'relation')):
     """Yield element if it is the right type of tag"""
 
@@ -180,6 +188,7 @@ def get_element(osm_file, tags=('node', 'way', 'relation')):
 
 def validate_element(element, validator, schema=SCHEMA):
     """Raise ValidationError if element does not match schema"""
+
     if validator.validate(element, schema) is not True:
         field, errors = next(validator.errors.iteritems())
         message_string = "\nElement of type '{0}' has the following errors:\n{1}"
@@ -200,9 +209,12 @@ class UnicodeDictWriter(csv.DictWriter, object):
             self.writerow(row)
 
 def read_osm_file():
+    """Returns an iterator providing (event, elem) pairs"""
+
     return ET.iterparse(OSM_FILE, events=('start','end'))
 
 def get_all_top_level_tags():
+    """Get all the top level tags (usage: to get used to the data)"""
 
     all_top_level_tags = {}
     context = read_osm_file()
@@ -219,9 +231,12 @@ def get_all_top_level_tags():
     return all_top_level_tags
 
 def is_street_type(street_type):
+    """Returns a boolean if the condition matches"""
+
     return street_type == "addr:street"
 
 def audit_data():
+    """Returns a dict-set containing the erroneous street type and various occurrences"""
 
     context = read_osm_file()
     _,root = next(context)
@@ -236,6 +251,7 @@ def audit_data():
     return street_types
 
 def audit_street_types(street_name):
+    """Helper to the audit_data method to match the regex"""
 
     match = path_marg_re.search(street_name)
 
@@ -243,6 +259,7 @@ def audit_street_types(street_name):
         street_types[match.group()].add(street_name)
 
 def update_name(name, mapping):
+    """If the value of an attribute matches the erroneous list, returns the corrected one"""
 
     values = re.split(" ",name)
 
@@ -253,16 +270,18 @@ def update_name(name, mapping):
 
 if __name__ == '__main__':
 
+    # Algo:
+    # Step 1: Audit the data to generate a list of problematic street types
+    # Step 2: Use the shape element function to map the osm file to fit the relational
+    #         database tables
+    # Step 3: dump the above results into a csv
+
     #print "1. get all to level tags"
     #all_top_level_tags = get_all_top_level_tags()
     #print all_top_level_tags
 
     print "2. Audit the data"
     street_tp = audit_data()
-
-    #for type, ways_nodes in street_tp.iteritems():
-    #    for name in ways_nodes:
-    #        update_name(name, mapping)
 
     print "3. Convert to csv"
     process_map(OSM_FILE, validate=True)
