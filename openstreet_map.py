@@ -93,23 +93,23 @@ def process_map(file_in, validate):
                     way_nodes_writer.writerows(el['way_nodes'])
                     way_tags_writer.writerows(el['way_tags'])
 
-        print all_elements_file
+        #print all_elements_file
 
 #####################################################################################
 ##                                  Helpers                                        ##
 #####################################################################################
 
 def set_way_attributes(element):
-    way_attribs = {}
+    way_attributes = {}
     way_nodes = []
     tags = []
 
-    way_attribs['id'] = element.attrib['id']
-    way_attribs['version'] = element.attrib['version']
-    way_attribs['timestamp'] = element.attrib['timestamp']
-    way_attribs['changeset'] = element.attrib['changeset']
-    way_attribs['user'] = element.attrib['user']
-    way_attribs['uid'] = element.attrib['uid']
+    way_attributes['id'] = element.attrib['id']
+    way_attributes['version'] = element.attrib['version']
+    way_attributes['timestamp'] = element.attrib['timestamp']
+    way_attributes['changeset'] = element.attrib['changeset']
+    way_attributes['user'] = element.attrib['user']
+    way_attributes['uid'] = element.attrib['uid']
 
     position_counter = 0
     for child in element:
@@ -118,11 +118,12 @@ def set_way_attributes(element):
             way_nodes.append({'id': element.attrib['id'], 'node_id': child.attrib['ref'], 'position': position_counter})
             position_counter += 1
         else:
+            value = update_name(child.attrib['v'], mapping)
             if ':' in child.attrib['k']:
                 keys_values = child.attrib['k'].split(":", 1)
                 way_tags['type'] = keys_values[0]
                 way_tags['key'] = keys_values[1]
-                way_tags['value'] = child.attrib['v']
+                way_tags['value'] = value
                 way_tags['id'] = element.attrib['id']
                 tags.append(dict(way_tags))
             else:
@@ -132,39 +133,40 @@ def set_way_attributes(element):
                 way_tags['id'] = element.attrib['id']
                 tags.append(way_tags)
 
-    return way_attribs, way_nodes, tags
+    return way_attributes, way_nodes, tags
 
 
 def set_node_attributes(element):
-    node_attribs = {}
+    node_attributes = {}
     tags = []
 
-    node_attribs['id'] = element.attrib['id']
-    node_attribs['version'] = element.attrib['version']
-    node_attribs['timestamp'] = element.attrib['timestamp']
-    node_attribs['changeset'] = element.attrib['changeset']
-    node_attribs['lat'] = element.attrib['lat']
-    node_attribs['lon'] = element.attrib['lon']
-    node_attribs['user'] = element.attrib['user']
-    node_attribs['uid'] = element.attrib['uid']
+    node_attributes['id'] = element.attrib['id']
+    node_attributes['version'] = element.attrib['version']
+    node_attributes['timestamp'] = element.attrib['timestamp']
+    node_attributes['changeset'] = element.attrib['changeset']
+    node_attributes['lat'] = element.attrib['lat']
+    node_attributes['lon'] = element.attrib['lon']
+    node_attributes['user'] = element.attrib['user']
+    node_attributes['uid'] = element.attrib['uid']
 
     for child in element:
         node_tags = {}
+        value = update_name(child.attrib['v'], mapping)
         if ':' in child.attrib['k']:
             keys_values = child.attrib['k'].split(":", 1)
             node_tags['type'] = keys_values[0]
             node_tags['key'] = keys_values[1]
-            node_tags['value'] = child.attrib['v']
+            node_tags['value'] = value
             node_tags['id'] = element.attrib['id']
             tags.append(dict(node_tags))
         else:
             node_tags['type'] = 'regular'
             node_tags['key'] = child.attrib['k']
-            node_tags['value'] = child.attrib['v']
+            node_tags['value'] = value
             node_tags['id'] = element.attrib['id']
             tags.append(dict(node_tags))
 
-    return node_attribs, tags
+    return node_attributes, tags
 
 def get_element(osm_file, tags=('node', 'way', 'relation')):
     """Yield element if it is the right type of tag"""
@@ -244,7 +246,7 @@ def update_name(name, mapping):
 
     values = re.split(" ",name)
 
-    for key,value in mapping.iteritems():
+    for key, value in mapping.iteritems():
         if key in values:
             name = name.replace(key, value)
     return name
@@ -257,11 +259,10 @@ if __name__ == '__main__':
 
     print "2. Audit the data"
     street_tp = audit_data()
-    print street_tp
 
-    for type, ways_nodes in street_tp.iteritems():
-        for name in ways_nodes:
-            print update_name(name, mapping)
+    #for type, ways_nodes in street_tp.iteritems():
+    #    for name in ways_nodes:
+    #        update_name(name, mapping)
 
     print "3. Convert to csv"
     process_map(OSM_FILE, validate=True)
