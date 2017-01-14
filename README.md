@@ -23,20 +23,22 @@ Wrangling data with Openstreet Map
 - schema.py:	Schema corresponding to the mysql schema
 
 ### Overview
-I will try to go through the entire process of starting from downloading data to completing the project (short notes). Along with increasing my understanding of the techniques used, I would like to encourage any beginners who find this difficult, needless to say it was tough in the beginning, and slowly things seemed to be a cakewalk.
+I will try to go through the entire process of starting from downloading data to completing the project (short notes). Along with increasing my understanding of the techniques used, I would like to encourage any beginners who find wrangling/auditing/cleaning/transforming data to be difficult.
 
 #### The Process
 1. Know your data. Understand the data you are about to work on, spend as many hours as possible to understand how to look at data.
 2. Once you are aware of the data you are about to play with, write down rough steps as to what you think you should do to complete the project.
-  a. famililiarize with data, read through the osm wiki to know more
-  b. do iterative parsing and check if any trivial errors are present
-  c. review/audit the street names
-  d. dump into the database
-  e. draw insights using mysql
-3. Start with the exercises in the case study part and simultaneously implement your part of the code for the Project. One task at a time!
+  1. Familiarize with data, read through the osm wiki to know more
+  2. Work with miniature version of data, if everything seems good, go ahead with the entire dataset
+  3. Do iterative parsing (since data set is huge) and check if any trivial errors are present
+  4. Review/audit the problematic data
+  5. Load into the database
+  6. Draw insights using mysql
 
-### Know your Data 
-The osm file consists of 3 main tags; **nodes**, **relations**, **ways**. We will focus on ways and nodes. More about openstreet map can be found on their wiki page: https://wiki.openstreetmap.org/wiki/Main_Page.
+> Tip: Case study exercises were almost enough to get thorough idea of how to proceed in the project.
+
+### Know your Data
+The osm file consists of 3 main tags; **nodes**, **relations**, **ways**. We will focus on ways and nodes. More about openstreet map can be found on [osm wiki page](https://wiki.openstreetmap.org/wiki/Main_Page).
 
 #### Brief Introduction
 ##### Nodes
@@ -64,8 +66,8 @@ Simply put, if 2 nodes are connected by a path, then the path is nothing but a w
 In the above samples of osm data, the `node's` `id=2183530544` is also present as a reference in the `way` tag, you can see the `nd ref=2183530544`, which refers to the node's id from node tag.
 
 ### Data Wrangling
-Pune is a city in Maharashtra where majorly spoken language is Marathi. Road in English is equivalent to Marg or Path in Marathi. So, I have set a mapping dictionary to map various forms of Road to 'Road'.
-```
+Pune is a city in Maharashtra where Marathi is spoken majorly. 'Road' in English is equivalent to 'Marg' or 'Path' in Marathi. So, I have set a mapping dictionary to map linguistic equivalents of Road to 'Road'.
+```python
 mapping = {
     "Rd": "Road",
     "Path": "Road",
@@ -83,8 +85,8 @@ ways_nodes: { id, node_id, position }
 
 ### Draw insights out of data from database
 
-** Top 10 contributors from Pune **
-```
+##### Top 10 contributors from Pune
+```sql
 mysql> SELECT u.user Name, COUNT(*) Total_Contributions FROM (SELECT user FROM nodes UNION ALL SELECT user FROM ways) u GROUP BY 1 ORDER BY Total_Contributions DESC LIMIT 10;
 +---------------+---------------------+
 | Name          | Total_Contributions |
@@ -103,12 +105,12 @@ mysql> SELECT u.user Name, COUNT(*) Total_Contributions FROM (SELECT user FROM n
 10 rows in set (9.71 sec)
 ```
 
-** Popular Cuisine **
-```
+##### Popular Cuisine
+```sql
 mysql> SELECT nt.value Cuisine, COUNT(*) as Total FROM nodes_tags nt, nodes_tags nts WHERE nt.id = nts.id AND nts.value = 'restaurant' AND nt.tkey = 'cuisine' GROUP BY 1 ORDER BY 2 DESC;
-+----------------------------+
-| Cuisine            | Total |
-+-----------------------------
++------------------------------------------------------------------------------------------------------------------------------------------------+-------+
+| Cuisine                                                                                                                                        | Total |
++------------------------------------------------------------------------------------------------------------------------------------------------+-------+
 | indian                                                                                                                                         |    44 |
 | vegetarian                                                                                                                                     |    13 |
 | pizza                                                                                                                                          |    10 |
@@ -123,21 +125,22 @@ mysql> SELECT nt.value Cuisine, COUNT(*) as Total FROM nodes_tags nt, nodes_tags
 | kebab                                                                                                                                          |     1 |
 | doughnut                                                                                                                                       |     1 |
 | chinese;indian                                                                                                                                 |     1 |
-| indianstreetfood,_kathi_kebabs, chaat, grilled sANDwiches, coffee, muffins, brownies, eclairs, pav bhaji, pulao, biryanis, samosas, beverages, |     1 |
+| indianstreetfood,_kathi_kebabs, chaat, grilled sandwiches, coffee, muffins, brownies, eclairs, pav bhaji, pulao, biryanis, samosas, beverages, |     1 |
 | regional,wraps                                                                                                                                 |     1 |
 | regional,gujarati                                                                                                                              |     1 |
 | sizzlers                                                                                                                                       |     1 |
 | regional,_arabic                                                                                                                               |     1 |
 | North_Indian                                                                                                                                   |     1 |
-| Regional,_India,_TANDoor,_Chinese                                                                                                              |     1 |
+| Regional,_India,_Tandoor,_Chinese                                                                                                              |     1 |
 | Multi-Cuisine                                                                                                                                  |     1 |
 | italian,_Pizza,_Pasta,_Mexican,_Lebanese                                                                                                       |     1 |
 +------------------------------------------------------------------------------------------------------------------------------------------------+-------+
-23 rows in set (0.02 sec)
+23 rows in set (0.00 sec)
+
 ```
 
-** Biggest religion **
-```
+##### Most followed Religion
+```sql
 mysql> SELECT nt.value Religion, COUNT(*) as Total FROM nodes_tags nt, nodes_tags nts WHERE nt.id = nts.id AND nts.value = 'place_of_worship' AND nt.tkey = 'religion' GROUP BY 1 ORDER BY 2 DESC LIMIT 1;
 +----------+-------+
 | Religion | Total |
@@ -147,8 +150,8 @@ mysql> SELECT nt.value Religion, COUNT(*) as Total FROM nodes_tags nt, nodes_tag
 1 row in set (0.01 sec)
 ```
 
-** Top 10 amenities **
-```
+##### Top 10 amenities
+```sql
 mysql> SELECT value Amenity, COUNT(*) as Total FROM nodes_tags WHERE tkey='amenity' GROUP BY 1 ORDER BY 2 DESC LIMIT 10;
 +------------------+-------+
 | Amenity          | Total |
@@ -167,8 +170,8 @@ mysql> SELECT value Amenity, COUNT(*) as Total FROM nodes_tags WHERE tkey='ameni
 10 rows in set (0.02 sec)
 ```
 
-** Number of unique users **
-```
+##### Number of unique users
+```sql
 mysql> SELECT COUNT(distinct(e.uid)) Distinct_Users FROM (SELECT uid FROM nodes UNION ALL SELECT uid FROM ways) e;
 +----------------+
 | Distinct_Users |
@@ -178,8 +181,8 @@ mysql> SELECT COUNT(distinct(e.uid)) Distinct_Users FROM (SELECT uid FROM nodes 
 1 row in set (0.00 sec)
 ```
 
-** No of nodes **
-```
+##### No. of nodes
+```sql
 mysql> SELECT COUNT(*) Nodes FROM nodes;
 +---------+
 | Nodes   |
@@ -189,8 +192,8 @@ mysql> SELECT COUNT(*) Nodes FROM nodes;
 1 row in set (0.40 sec)
 ```
 
-** No of ways **
-```
+##### No. of ways
+```sql
 mysql> SELECT COUNT(*) Ways FROM ways;
 +--------+
 | Ways   |
@@ -200,8 +203,8 @@ mysql> SELECT COUNT(*) Ways FROM ways;
 1 row in set (0.08 sec)
 ```
 
-** List of zip codes **
-```
+##### List of zip codes
+```sql
 mysql> SELECT distinct(value) Zip_Codes FROM nodes_tags WHERE tkey like '%post%';
 +----------------+
 | Zip_Codes      |
@@ -259,8 +262,8 @@ mysql> SELECT distinct(value) Zip_Codes FROM nodes_tags WHERE tkey like '%post%'
 ```
 * There is still some cleaning to be done, as we can see that there are problematic (letters and spaces ) character in postal code; though the occurrence is very less *
 
-** Top 10 places from where contributions have been done **
-```
+##### Top 10 places from where contributions have been done
+```sql
 mysql> SELECT value Place, COUNT(*) Total FROM (SELECT value, tkey FROM ways_tags UNION ALL SELECT value, tkey FROM nodes_tags ) u WHERE u.tkey = 'street' GROUP BY 1 ORDER BY 2 DESC LIMIT 10;
 +----------------------------+-------+
 | Place                      | Total |
@@ -294,21 +297,21 @@ So, looking at the error message, one problem could have been that,
 For this, 
 - I first used some unix tools like 'awk' to get only the id from nodes.csv and nodes_tags.csv. Later inserted them into temporary tables without PRIMARY KEY and wrote a query to check whether data was redundant. Found out that the rows were getting skipped due to ',' being present in them and had to escape them.
 - The below cmd skipped the problematic rows
-```
+```bash
 > sudo mysqlimport --ignore-lines=1 --fields-terminated-by=',' --verbose --local -u root data_wrangling_schema /var/lib/mysql-files/ways_nodes.csv
 ```
 - The cmd was modified to include below optional option where we mention that fields may be enclosed by '"' which was the case and it resolved the issue
-```
+```bash
 > sudo mysqlimport --ignore-lines=1 --fields-terminated-by=',' --fields-optionally-enclosed-by='"' --verbose --local -u root data_wrangling_schema /var/lib/mysql-files/ways_tags.csv
 ```
 
 ### Additional Stats
 - As good as 40% data comes from the top 10 contributors on the list pasted above.
 - For people to contribute more to the openstreet map, there should be conventions/groups which can motivate others to contribute
-- Gamification will ensure a new dimension to the contributing from users
+- Gamification will ensure people contribute more to the OSM
 
 ### Conclusion
-I still feel that the data is very immature (at least for Pune). Gamification (in terms of credits and leaderboard stats) can be an important contributing pillar which can make users contribute more to the project. Rating systems can be deployed considering the data gets into a better shape like it is possible with Google Reviews.
+I still feel that the data is very immature (at least for Pune). Gamification (in terms of credits and leaderboard stats) can be an important pillar which can make users contribute more to the project. Rating systems can be deployed once the data gets into a better shape, the way it is possible with Google Reviews.
 
 ### References
 - https://gist.github.com/carlward/54ec1c91b62a5f911c42#file-sample_project-md
@@ -316,3 +319,4 @@ I still feel that the data is very immature (at least for Pune). Gamification (i
 - https://docs.python.org/2/library/collections.html#collections.defaultdict
 - http://www.jeannicholashould.com/tidy-data-in-python.html
 - https://help.github.com/articles/basic-writing-and-formatting-syntax/
+- http://www.rubycoloredglasses.com/2013/04/languages-supported-by-github-flavored-markdown/
