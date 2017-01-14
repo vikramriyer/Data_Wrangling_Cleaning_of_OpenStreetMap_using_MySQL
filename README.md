@@ -35,7 +35,7 @@ I will try to go through the entire process of starting from downloading data to
   e. draw insights using mysql
 3. Start with the exercises in the case study part and simultaneously implement your part of the code for the Project. One task at a time!
 
-### Know your Data
+### Know your Data 
 The osm file consists of 3 main tags; **nodes**, **relations**, **ways**. We will focus on ways and nodes. More about openstreet map can be found on their wiki page: https://wiki.openstreetmap.org/wiki/Main_Page.
 
 #### Brief Introduction
