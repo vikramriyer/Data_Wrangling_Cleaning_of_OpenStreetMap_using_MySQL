@@ -1,21 +1,24 @@
-# openstreet-map-data-science
-I will analyze open street map for pune region
+openstreet-map-data-science
+===
 
-Things that I will try to get my hands dirty on: 
-wrangling data
-exploring data
-drawing insights
+### Why I chose Pune?
+1. Staying here since 3 years, hence would be easier to spot trivial errors
+2. Though this would not be the case always, it's better to familiarize with known set of data
 
-softwares/technologies used:
+### What all things will be done?
+1. Cleaning data
+2. Making data available into a Database. I have mysql which is a Relational database
+3. Querying the database to get insights
+
+### What all Softwares/Technologies did I use?
 - mysql
 - python
 
-how do I start?
- - famililiarize with data
- - do iterative parsing and check if anything good is present
- - types of tags: way, node, relation
-   think how can you parse them, what all is important
- - explore the types of users
- - review the street names
- - preparing for the database
-   we have done this in full, check with that
+### Contents of the Repository
+- README.md: Description of the project
+- openstreet_map.py: Main Code	used for cleaning/auditing data and generating csv files
+- pune_india.osm.bz2:	Compressed format of the complete data for Pune region (Uncompressed=300M)
+- pune_india_sample.osm:	Sample data
+- sample.py: Code to generate sample data from huge dataset
+- schema.py:	Schema corresponding to the mysql schema
+
