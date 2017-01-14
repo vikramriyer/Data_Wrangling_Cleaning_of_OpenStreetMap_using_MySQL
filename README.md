@@ -310,7 +310,8 @@ For this,
 I still feel that the data is very immature (at least for Pune). Gamification (in terms of credits and leaderboard stats) can be an important contributing pillar which can make users contribute more to the project. Rating systems can be deployed considering the data gets into a better shape like it is possible with Google Reviews.
 
 ### References
-https://gist.github.com/carlward/54ec1c91b62a5f911c42#file-sample_project-md
-http://www.thegeekstuff.com/2008/10/import-and-upload-data-to-mysql-tables-using-mysqlimport/
-https://docs.python.org/2/library/collections.html#collections.defaultdict
-http://www.jeannicholashould.com/tidy-data-in-python.html
+- https://gist.github.com/carlward/54ec1c91b62a5f911c42#file-sample_project-md
+- http://www.thegeekstuff.com/2008/10/import-and-upload-data-to-mysql-tables-using-mysqlimport/
+- https://docs.python.org/2/library/collections.html#collections.defaultdict
+- http://www.jeannicholashould.com/tidy-data-in-python.html
+- https://help.github.com/articles/basic-writing-and-formatting-syntax/
