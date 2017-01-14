@@ -301,4 +301,10 @@ For this,
 > sudo mysqlimport --ignore-lines=1 --fields-terminated-by=',' --fields-optionally-enclosed-by='"' --verbose --local -u root data_wrangling_schema /var/lib/mysql-files/ways_tags.csv
 ```
 
+### Additional Stats
+- As good as 40% data comes from the top 10 contributors on the list pasted above.
+- For people to contribute more to the openstreet map, there should be conventions/groups which can motivate others to contribute
+- Gamification will ensure a new dimension to the contributing from users
+
 ### Conclusion
+I still feel that the data is very immature (at least for Pune). Gamification (in terms of credits and leaderboard stats) can be an important contributing pillar which can make users contribute more to the project. Rating systems can be deployed considering the data gets into a better shape like it is possible with Google Reviews.
