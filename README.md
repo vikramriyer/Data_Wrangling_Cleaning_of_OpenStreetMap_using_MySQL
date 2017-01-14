@@ -279,11 +279,14 @@ mysql> SELECT value Place, COUNT(*) Total FROM (SELECT value, tkey FROM ways_tag
 ```
 
 ### Challenges Faced
+##### Errors
 1. Error: Duplicate entry for '2147483647' for key 'PRIMARY'.
 I had to change the datatype of 'id' column in nodes table from INTEGER to BIGINT as it exceeded the limit. You can refer below link for more details:
 http://stackoverflow.com/questions/18643648/mysql-insert-query-returns-error-1062-23000-duplicate-entry-2147483647-for
 
 2. Error: Mysql threw unique key constraint errors when trying to dump nodes_tags.csv in table using mysql prompt LOAD cmd and skipped 3 rows when tried the same using mysqlimport. 
+
+##### Resolution
 So, looking at the error message, one problem could have been that, 
 - primary key was duplicate
 - the id in nodes_tags which was referred to in nodes was not present
