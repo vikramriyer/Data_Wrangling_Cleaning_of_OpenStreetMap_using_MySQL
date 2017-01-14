@@ -3,12 +3,12 @@ Wrangling data with Openstreet Map
 
 ### Why I chose Pune?
 1. Staying here since 3 years, hence would be easier to spot trivial errors
-2. Though this would not be the case always, it's better to familiarize with known set of data
+2. Though this would not be the case always, it's better to start with familiar set of data
 
 ### What all points will be covered?
-1. Cleaning data
-2. Making data available into a Database. I have mysql which is a Relational database
-3. Querying the database to get insights
+1. Cleaning/Auditing data
+2. Transforming osm data to fit any database schema. I am using mysql which is a Relational database
+3. Querying the database to draw insights
 
 ### What all Softwares/Technologies did I use?
 - mysql
@@ -26,21 +26,21 @@ Wrangling data with Openstreet Map
 I will try to go through the entire process of starting from downloading data to completing the project (short notes). Along with increasing my understanding of the techniques used, I would like to encourage any beginners who find this difficult, needless to say it was tough in the beginning, and slowly things seemed to be a cakewalk.
 
 #### The Process
-Step 1: Know your data. Understand the data you are about to work on, spend as many hours as possible to understand how to look at data.
-Step 2: Once you are aware of the data you are about to play with, write down a rough steps as to what you think you should do to complete the project.
-My steps included:
- - famililiarize with data, read through the osm wiki to know more
- - do iterative parsing and check if any trivial errors are present
- - review/audit the street names
- - dump into the database
- - draw insights using mysql
-Step 3: Start with the exercises in the case study part and simultaneously implement your part of the code for the Project. One task at a time!
+1. Know your data. Understand the data you are about to work on, spend as many hours as possible to understand how to look at data.
+2. Once you are aware of the data you are about to play with, write down rough steps as to what you think you should do to complete the project.
+  a. famililiarize with data, read through the osm wiki to know more
+  b. do iterative parsing and check if any trivial errors are present
+  c. review/audit the street names
+  d. dump into the database
+  e. draw insights using mysql
+3. Start with the exercises in the case study part and simultaneously implement your part of the code for the Project. One task at a time!
 
 ### Know your Data
 The osm file consists of 3 main tags; **nodes**, **relations**, **ways**. We will focus on ways and nodes. More about openstreet map can be found on their wiki page: https://wiki.openstreetmap.org/wiki/Main_Page.
 
-To give a brief introduction:
-**Nodes**: Static points mapped using latitude and longitude geographically. For ex: McDonalds at a certain street will be mapped as a node with unique node 'id' and will have latitude and longitude to map its location geographically
+#### Brief Introduction
+##### Nodes
+Static points mapped using latitude and longitude geographically. For ex: McDonalds at a certain street will be mapped as a node with unique node 'id' and will have latitude and longitude to map its location geographically
 ```
 <node id="2183530544" lat="18.5520773" lon="73.8925318" version="1" timestamp="2013-03-03T13:05:44Z" changeset="15233276" uid="78432" user="aveekbh">
   <tag k="name" v="Muttha Towers"/>
@@ -52,7 +52,8 @@ To give a brief introduction:
 </node>
 
 ```
-**Ways**: Simply put, if 2 nodes are connected by a path, then the path is nothing but a way. Ways can be either closed (starting node is the ending node) and open ways (starting and ending nodes may be geographically apart).
+##### Ways
+Simply put, if 2 nodes are connected by a path, then the path is nothing but a way. Ways can be either closed (starting node is the ending node) and open ways (starting and ending nodes may be geographically apart).
 ```
 <way id="208055626" version="1" timestamp="2013-03-03T13:05:45Z" changeset="15233276" uid="78432" user="aveekbh">
   <nd ref="2183530544"/>
