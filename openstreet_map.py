@@ -9,6 +9,8 @@ import codecs
 import pprint
 import cerberus
 import schema
+#import csv
+#import MySQLdb
 
 # files
 OSM_FILE = "pune_india.osm"
@@ -39,6 +41,10 @@ mapping = {
     "Marg": "Road",
     "road": "Road"
 }
+
+# DB
+#mydb = MySQLdb.connect(host='localhost', user='root', db='data_wrangling_schema')
+#cursor = mydb.cursor()
 
 # The data obtained from this function will directly dumped into csv files, which in
 # turn will be loaded into mysql
@@ -268,6 +274,17 @@ def update_name(name, mapping):
             name = name.replace(key, value)
     return name
 
+# Not using the below function, just kept so that can modify it later to dump using the code rather than
+# doing it manually as done now.
+"""
+def insert_into_db(table, file_name):
+    file_obj = csv.reader(file(file_name))
+    for row in file_obj:
+
+        cursor.execute('INSERT INTO nodes_tags VALUES("%s", "%s", "%s", "%s")' % (row[0], row[1], row[2], row[3]) )
+        mydb.commit()
+"""
+
 if __name__ == '__main__':
 
     # Algo:
@@ -285,3 +302,8 @@ if __name__ == '__main__':
 
     print "3. Convert to csv"
     process_map(OSM_FILE, validate=True)
+
+    #print "4. Dump to mysql - Directly used below mysql commands to dump into database"
+    # sudo mysqlimport --ignore-lines=1 --fields-terminated-by=, --verbose --local -u root
+    # data_wrangling_schema /var/lib/mysql-files/nodes.csv
+    # Similarly, for other tables
