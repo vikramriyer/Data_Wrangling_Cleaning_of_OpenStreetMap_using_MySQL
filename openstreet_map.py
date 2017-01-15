@@ -9,11 +9,9 @@ import codecs
 import pprint
 import cerberus
 import schema
-#import csv
-#import MySQLdb
 
 # files
-OSM_FILE = "pune_india.osm"
+OSM_FILE = "sample.osm"
 NODES_PATH = "nodes.csv"
 NODE_TAGS_PATH = "nodes_tags.csv"
 WAYS_PATH = "ways.csv"
@@ -31,20 +29,19 @@ SCHEMA = schema.schema
 
 #regex patterns
 LEGAL_POSTAL_CODES = re.compile(r'^(411)[0-9]{3}$')
-ILLEGAL_POSTAL_CODES = [re.compile(r'^(411) [0-9]{3}$'), re.compile(r'^(411)[0-9] [0-9]{2}$'), re.compile(r'^(411)[0-9]{2} [0-9]$')]
+ILLEGAL_POSTAL_CODES = re.compile(r'^(411) ?[0-9] ?[0-9]? [0-9]?$')
 path_marg_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
-street_types = defaultdict(set)
 
+error_postal_codes = []
+postcode = { "postal_code", "postcode" }
+postcode_mapper = defaultdict(set)
+street_types = defaultdict(set)
 mapping = {
     "Rd": "Road",
     "Path": "Road",
     "Marg": "Road",
     "road": "Road"
 }
-
-# DB
-#mydb = MySQLdb.connect(host='localhost', user='root', db='data_wrangling_schema')
-#cursor = mydb.cursor()
 
 # The data obtained from this function will directly dumped into csv files, which in
 # turn will be loaded into mysql
@@ -165,8 +162,11 @@ def set_node_attributes(element):
         value = update_name(child.attrib['v'], mapping)
         if ':' in child.attrib['k']:
             keys_values = child.attrib['k'].split(":", 1)
+            key = update_name(keys_values[1], postcode_mapper)
+            if key == 'postcode':
+                value = validate_postcode(value)
             node_tags['type'] = keys_values[0]
-            node_tags['key'] = keys_values[1]
+            node_tags['key'] = key
             node_tags['value'] = value
             node_tags['id'] = element.attrib['id']
             tags.append(dict(node_tags))
@@ -178,6 +178,14 @@ def set_node_attributes(element):
             tags.append(dict(node_tags))
 
     return node_attributes, tags
+
+def validate_postcode(code):
+    if not LEGAL_POSTAL_CODES.search(code):
+        if ILLEGAL_POSTAL_CODES.search(code):
+            code = re.sub(' |_|-','',code)
+        else:
+            error_postal_codes.append(code)
+    return code
 
 # Important function which is faster than usage of list which stores the elements in memory.
 # Using the "yield" will ensure that the data once accessed will be erased rather than storing
@@ -274,17 +282,6 @@ def update_name(name, mapping):
             name = name.replace(key, value)
     return name
 
-# Not using the below function, just kept so that can modify it later to dump using the code rather than
-# doing it manually as done now.
-"""
-def insert_into_db(table, file_name):
-    file_obj = csv.reader(file(file_name))
-    for row in file_obj:
-
-        cursor.execute('INSERT INTO nodes_tags VALUES("%s", "%s", "%s", "%s")' % (row[0], row[1], row[2], row[3]) )
-        mydb.commit()
-"""
-
 if __name__ == '__main__':
 
     # Algo:
@@ -302,8 +299,3 @@ if __name__ == '__main__':
 
     print "3. Convert to csv"
     process_map(OSM_FILE, validate=True)
-
-    #print "4. Dump to mysql - Directly used below mysql commands to dump into database"
-    # sudo mysqlimport --ignore-lines=1 --fields-terminated-by=, --verbose --local -u root
-    # data_wrangling_schema /var/lib/mysql-files/nodes.csv
-    # Similarly, for other tables
