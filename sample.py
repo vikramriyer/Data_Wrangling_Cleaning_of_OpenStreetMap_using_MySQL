@@ -3,8 +3,8 @@
 
 import xml.etree.ElementTree as ET  # Use cElementTree or lxml if too slow
 
-OSM_FILE = "sample_2.osm"  # Replace this with your osm file
-SAMPLE_FILE = "sample_3.osm"
+OSM_FILE = "sample.osm"  # Replace this with your osm file
+SAMPLE_FILE = "sample_1.osm"
 
 k = 10 # Parameter: take every k-th top level element
 
