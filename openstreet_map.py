@@ -32,6 +32,7 @@ LEGAL_POSTAL_CODES = re.compile(r'^(411)[0-9]{3}$')
 ILLEGAL_POSTAL_CODES = re.compile(r'^(411) ?[0-9] ?[0-9]? [0-9]?$')
 path_marg_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 bots_re = re.compile(r'.*?bot.*?')
+phone_number_re = re.compile(r'(91|0)(\s?|\-?)?(20)\s?([246][0-9]{3}\s?[0-9]{4})|(91|0)(\s?|\-?)?([789][0-9]{9})')
 
 error_postal_codes = []
 postcode_mapper = {
@@ -135,6 +136,8 @@ def set_way_attributes(element):
                 key = update_name(keys_values[1], postcode_mapper)
                 if key == 'postcode':
                     value = validate_postcode(value)
+                if key == 'phone':
+                    value = validate_phone_numbers(child.attrib['v'])
                 way_tags['type'] = keys_values[0]
                 way_tags['key'] = keys_values[1]
                 way_tags['value'] = value
@@ -181,6 +184,8 @@ def set_node_attributes(element):
             node_tags['id'] = element.attrib['id']
             tags.append(dict(node_tags))
         else:
+            if child.attrib['k'] == 'phone':
+                value = validate_phone_numbers(child.attrib['v'])
             node_tags['type'] = 'regular'
             node_tags['key'] = child.attrib['k']
             node_tags['value'] = value
@@ -192,6 +197,16 @@ def set_node_attributes(element):
 def find_bots(username):
     if bots_re.search(username):
         bots.append(username)
+
+def validate_phone_numbers(phone_number):
+
+    all_matches = phone_number_re.findall(phone_number)
+    print all_matches
+    for match in all_matches[0]:
+        if len(match) > 2:
+            phone_number = str(match)
+
+    return phone_number
 
 def validate_postcode(code):
     if not LEGAL_POSTAL_CODES.search(code):
