@@ -32,7 +32,7 @@ LEGAL_POSTAL_CODES = re.compile(r'^(411)[0-9]{3}$')
 ILLEGAL_POSTAL_CODES = re.compile(r'^(411) ?[0-9] ?[0-9]? [0-9]?$')
 path_marg_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 bots_re = re.compile(r'.*?bot.*?')
-phone_number_re = re.compile(r'(91|0)(\s?|\-?)?(20)\s?([246][0-9]{3}\s?[0-9]{4})|(91|0)(\s?|\-?)?([789][0-9]{9})')
+phone_number_re = re.compile(r'(91|0)(\s?|\-?)?(20)\s?([0-9]{4}\s?[0-9]{4})|(91|0)(\s?|\-?)?([789][0-9]{9})')
 
 error_postal_codes = []
 postcode_mapper = {
@@ -200,8 +200,8 @@ def find_bots(username):
 
 def validate_phone_numbers(phone_number):
 
+    print phone_number
     all_matches = phone_number_re.findall(phone_number)
-    print all_matches
     for match in all_matches[0]:
         if len(match) > 2:
             phone_number = str(match)
