@@ -31,10 +31,12 @@ SCHEMA = schema.schema
 LEGAL_POSTAL_CODES = re.compile(r'^(411)[0-9]{3}$')
 ILLEGAL_POSTAL_CODES = re.compile(r'^(411) ?[0-9] ?[0-9]? [0-9]?$')
 path_marg_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
+bots_re = re.compile(r'.*?bot.*?')
 
 error_postal_codes = []
-postcode = { "postal_code", "postcode" }
-postcode_mapper = defaultdict(set)
+postcode_mapper = {
+    "postal_code": "postcode"
+}
 street_types = defaultdict(set)
 mapping = {
     "Rd": "Road",
@@ -42,6 +44,7 @@ mapping = {
     "Marg": "Road",
     "road": "Road"
 }
+bots = []
 
 # The data obtained from this function will directly dumped into csv files, which in
 # turn will be loaded into mysql
@@ -117,6 +120,8 @@ def set_way_attributes(element):
     way_attributes['user'] = element.attrib['user']
     way_attributes['uid'] = element.attrib['uid']
 
+    find_bots(way_attributes['user'])
+
     position_counter = 0
     for child in element:
         way_tags = {}
@@ -127,6 +132,9 @@ def set_way_attributes(element):
             value = update_name(child.attrib['v'], mapping)
             if ':' in child.attrib['k']:
                 keys_values = child.attrib['k'].split(":", 1)
+                key = update_name(keys_values[1], postcode_mapper)
+                if key == 'postcode':
+                    value = validate_postcode(value)
                 way_tags['type'] = keys_values[0]
                 way_tags['key'] = keys_values[1]
                 way_tags['value'] = value
@@ -157,6 +165,8 @@ def set_node_attributes(element):
     node_attributes['user'] = element.attrib['user']
     node_attributes['uid'] = element.attrib['uid']
 
+    find_bots(node_attributes['user'])
+
     for child in element:
         node_tags = {}
         value = update_name(child.attrib['v'], mapping)
@@ -178,6 +188,10 @@ def set_node_attributes(element):
             tags.append(dict(node_tags))
 
     return node_attributes, tags
+
+def find_bots(username):
+    if bots_re.search(username):
+        bots.append(username)
 
 def validate_postcode(code):
     if not LEGAL_POSTAL_CODES.search(code):
@@ -293,9 +307,19 @@ if __name__ == '__main__':
     #print "1. get all to level tags"
     #all_top_level_tags = get_all_top_level_tags()
     #print all_top_level_tags
+    #print "\n*************\n"
 
-    print "2. Audit the data"
+    print "2. Audit the data::"
     street_tp = audit_data()
 
-    print "3. Convert to csv"
+    print "\n*************\n"
+
+    print "2.1 List of bot users::"
+    print set(bots)
+
+    print "\n*************\n"
+
+    print "List of malformed postal codes not caught in any pattern::\n" + str(set(error_postal_codes))
+
+    print "3. Convert to csv::"
     process_map(OSM_FILE, validate=True)
