@@ -33,6 +33,7 @@ ILLEGAL_POSTAL_CODES = re.compile(r'^(411) ?[0-9] ?[0-9]? [0-9]?$')
 path_marg_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 bots_re = re.compile(r'.*?bot.*?')
 phone_number_re = re.compile(r'(91|0)(\s?|\-?)?(20)\s?([0-9]{4}\s?[0-9]{4})|(91|0)(\s?|\-?)?([789][0-9]{9})')
+cuisine_re = re.compile(r'.*?ian')
 
 error_postal_codes = []
 postcode_mapper = {
@@ -200,7 +201,6 @@ def find_bots(username):
 
 def validate_phone_numbers(phone_number):
 
-    print phone_number
     all_matches = phone_number_re.findall(phone_number)
     for match in all_matches[0]:
         if len(match) > 2:
@@ -324,17 +324,12 @@ if __name__ == '__main__':
     #print all_top_level_tags
     #print "\n*************\n"
 
-    print "2. Audit the data::"
     street_tp = audit_data()
 
-    print "\n*************\n"
+    if len(bots) > 1:
+        print "The bot users are:: " + str(set(bots)) + "\n*************\n"
 
-    print "2.1 List of bot users::"
-    print set(bots)
+    if len(error_postal_codes) > 1:
+        print "List of malformed postal codes not caught in any pattern::\n" + str(set(error_postal_codes))
 
-    print "\n*************\n"
-
-    print "List of malformed postal codes not caught in any pattern::\n" + str(set(error_postal_codes))
-
-    print "3. Convert to csv::"
     process_map(OSM_FILE, validate=True)
