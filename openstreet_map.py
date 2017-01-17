@@ -33,7 +33,6 @@ ILLEGAL_POSTAL_CODES = re.compile(r'^(411) ?[0-9] ?[0-9]? [0-9]?$')
 path_marg_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 bots_re = re.compile(r'.*?bot.*?')
 phone_number_re = re.compile(r'(91|0)(\s?|\-?)?(20)\s?([0-9]{4}\s?[0-9]{4})|(91|0)(\s?|\-?)?([789][0-9]{9})')
-cuisine_re = re.compile(r'.*?ian')
 
 error_postal_codes = []
 postcode_mapper = {
@@ -51,7 +50,15 @@ bots = []
 # The data obtained from this function will directly dumped into csv files, which in
 # turn will be loaded into mysql
 def shape_element(element, node_attr_fields=NODE_FIELDS, way_attr_fields=WAY_FIELDS):
-    """ Returns values corresponding to the schema tables"""
+    """ Returns values corresponding to the schema tables
+        Args:
+            element (ElementTree object): the valid tags in the osm
+            node_attr_fields (list): all the attributes mapped to the corresponding NODE_FIELDS
+            way_attr_fields (list): all the attributes mapped to the corresponding WAY_FIELDS
+        Return:
+            node_attributes if element is node
+            way_attributes if element is way
+    """
 
     if element.tag == 'node':
         node_attribs, tags = set_node_attributes(element)
@@ -62,7 +69,13 @@ def shape_element(element, node_attr_fields=NODE_FIELDS, way_attr_fields=WAY_FIE
 
 # Uses the above shape_element function to write to csv's
 def process_map(file_in, validate):
-    """Iteratively process each XML element and write to csv(s)"""
+    """Iteratively process each XML element, validates fields and write to csv(s)
+        Args:
+            file_in (string): osm file path (current directory in this code)
+            validate (boolean): if true, calls validate_element method
+        Return:
+            Doesn't return
+    """
 
     with codecs.open(NODES_PATH, 'w') as nodes_file, \
             codecs.open(NODE_TAGS_PATH, 'w') as nodes_tags_file, \
@@ -109,7 +122,12 @@ def process_map(file_in, validate):
 
 # The function will contribute to ways, ways_tags and ways_nodes tables in mysql
 def set_way_attributes(element):
-    """Returns a shaped element to fit the corresponding mysql table for 'way' element"""
+    """Returns a shaped element to fit the corresponding mysql table for 'way' element
+        Args:
+            element (ElementTree object): the valid tags in the osm
+        Return:
+            return way_attributes, way_nodes, tags
+    """
 
     way_attributes = {}
     way_nodes = []
@@ -155,7 +173,12 @@ def set_way_attributes(element):
 
 # The function will contribute to nodes and nodes_tags tables in mysql
 def set_node_attributes(element):
-    """Returns a shaped element to fit the corresponding mysql table for 'node' element"""
+    """Returns a shaped element to fit the corresponding mysql table for 'node' element
+        Args:
+            element (ElementTree object): the valid tags in the osm
+        Return:
+            return node_attributes, tags
+    """
 
     node_attributes = {}
     tags = []
@@ -196,10 +219,22 @@ def set_node_attributes(element):
     return node_attributes, tags
 
 def find_bots(username):
+    """ If the user is bot, adds to the global list bots
+        Args:
+            username (str): name of the contributor
+        Return:
+            Doesn't return
+    """
     if bots_re.search(username):
         bots.append(username)
 
 def validate_phone_numbers(phone_number):
+    """Validates if the given number is mobile (India) /landline (Pune) number
+        Args: 
+            phone_number (str): phone number 
+        Return:
+            doesnt return
+    """
 
     all_matches = phone_number_re.findall(phone_number)
     for match in all_matches[0]:
@@ -209,6 +244,14 @@ def validate_phone_numbers(phone_number):
     return phone_number
 
 def validate_postcode(code):
+
+    """Validates if the given code is valid postal code (PUNE)
+        Args:
+            code (str): postal/zip code
+        Return:
+            doesnt return
+    """
+
     if not LEGAL_POSTAL_CODES.search(code):
         if ILLEGAL_POSTAL_CODES.search(code):
             code = re.sub(' |_|-','',code)
@@ -220,7 +263,13 @@ def validate_postcode(code):
 # Using the "yield" will ensure that the data once accessed will be erased rather than storing
 # in memory till the process releases resources after its termination
 def get_element(osm_file, tags=('node', 'way', 'relation')):
-    """Yield element if it is the right type of tag"""
+    """Yield element if it is the right type of tag
+        Args:
+            osm_file (str): osm file path
+            tags (tuple): any of the top level tags (node, way, relation)
+        Return:
+            returns nothing, but yeild element mimics the return
+    """
 
     context = ET.iterparse(osm_file, events=('start', 'end'))
     _, root = next(context)
@@ -230,7 +279,13 @@ def get_element(osm_file, tags=('node', 'way', 'relation')):
             root.clear()
 
 def validate_element(element, validator, schema=SCHEMA):
-    """Raise ValidationError if element does not match schema"""
+    """Raise ValidationError if element does not match schema
+        Args:
+            element (ElementTree object): the valid tags in the osm
+            validator (cerberus validator object): validates fields with attributes
+        Return:
+            returns nothing  
+    """
 
     if validator.validate(element, schema) is not True:
         field, errors = next(validator.errors.iteritems())
@@ -252,12 +307,22 @@ class UnicodeDictWriter(csv.DictWriter, object):
             self.writerow(row)
 
 def read_osm_file():
-    """Returns an iterator providing (event, elem) pairs"""
+    """Returns an iterator providing (event, elem) pairs
+        Args:
+            none
+        Returns:
+            iterator over the osm file
+    """
 
     return ET.iterparse(OSM_FILE, events=('start','end'))
 
 def get_all_top_level_tags():
-    """Get all the top level tags (usage: to get used to the data)"""
+    """Get all the top level tags (usage: to get used to the data)]
+        Args:
+            none
+        Returns:
+            returns all top level tags
+    """
 
     all_top_level_tags = {}
     context = read_osm_file()
@@ -274,12 +339,23 @@ def get_all_top_level_tags():
     return all_top_level_tags
 
 def is_street_type(street_type):
-    """Returns a boolean if the condition matches"""
+    """Returns a boolean if the condition matches
+        Args: 
+            street_type (str): type of the street
+        Return:
+            return true if type is street
+            false if not
+    """
 
     return street_type == "addr:street"
 
 def audit_data():
-    """Returns a dict-set containing the erroneous street type and various occurrences"""
+    """Returns a dict-set containing the erroneous street type and various occurrences
+        Args:
+            none
+        Return:
+            Returns a street type and its occurrences
+    """
 
     context = read_osm_file()
     _,root = next(context)
@@ -294,7 +370,12 @@ def audit_data():
     return street_types
 
 def audit_street_types(street_name):
-    """Helper to the audit_data method to match the regex"""
+    """Helper to the audit_data method to match the regex
+        Args:
+            street_name: name of the street
+        Return:
+            doesnt return
+    """
 
     match = path_marg_re.search(street_name)
 
@@ -302,7 +383,14 @@ def audit_street_types(street_name):
         street_types[match.group()].add(street_name)
 
 def update_name(name, mapping):
-    """If the value of an attribute matches the erroneous list, returns the corrected one"""
+    """If the value of an attribute matches the erroneous list, returns the corrected one
+        Args:
+            name (str): various forms of street names
+            mapping (dict): dictionary to map linguistic forms of Road
+        Return:
+            returns the mapped name if present in mapping dict
+            else returns the argument as it is
+    """
 
     values = re.split(" ",name)
 
