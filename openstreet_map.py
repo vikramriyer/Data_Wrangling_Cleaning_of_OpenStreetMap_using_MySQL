@@ -233,7 +233,7 @@ def validate_phone_numbers(phone_number):
         Args: 
             phone_number (str): phone number 
         Return:
-            doesnt return
+            audited phone_number
     """
 
     all_matches = phone_number_re.findall(phone_number)
@@ -249,7 +249,7 @@ def validate_postcode(code):
         Args:
             code (str): postal/zip code
         Return:
-            doesnt return
+            audited code
     """
 
     if not LEGAL_POSTAL_CODES.search(code):
@@ -257,6 +257,7 @@ def validate_postcode(code):
             code = re.sub(' |_|-','',code)
         else:
             error_postal_codes.append(code)
+            code = ''
     return code
 
 # Important function which is faster than usage of list which stores the elements in memory.
