@@ -35,12 +35,9 @@ I will try to go through the entire process of starting from downloading data to
   5. Load into the database
   6. Draw insights using mysql
 
-> Tip: Case study exercises were almost enough to get thorough idea of how to proceed in the project.
-
 ### Know your Data
 The osm file consists of 3 main tags; **nodes**, **relations**, **ways**. We will focus on ways and nodes. More about openstreet map can be found on [osm wiki page](https://wiki.openstreetmap.org/wiki/Main_Page).
 
-#### Brief Introduction
 ##### Nodes
 Static points mapped using latitude and longitude geographically. For ex: McDonalds at a certain street will be mapped as a node with unique node 'id' and will have latitude and longitude to map its location geographically
 ```
@@ -66,7 +63,19 @@ Simply put, if 2 nodes are connected by a path, then the path is nothing but a w
 In the above samples of osm data, the `node's` `id=2183530544` is also present as a reference in the `way` tag, you can see the `nd ref=2183530544`, which refers to the node's id from node tag.
 
 ### Data Wrangling
-Pune is a city in Maharashtra where Marathi is spoken majorly. 'Road' in English is equivalent to 'Marg' or 'Path' in Marathi. So, I have set a mapping dictionary to map linguistic equivalents of Road to 'Road'.
+#### Street Names
+Pune is a city in Maharashtra where Marathi is spoken majorly. 'Road' in English is equivalent to 'Marg' or 'Path' in Marathi. 
+
+Below are some of the occurances:
+```xml
+<tag k="addr:street" v="Maharana Pratapsinh Marg"/> 
+<tag k="addr:street" v="Maharana Pratapsinh Marg"/> 
+<tag k="addr:street" v="G. A. Kulkarni Path"/> 
+<tag k="addr:street" v="Pu. Bha. Bhave Path"/> 
+```
+
+So, I have set a mapping dictionary to map linguistic equivalents of Road to 'Road'. In the below cases, all the entries ending with Marg or Path will now end with Road. This step is taken to just standardize the data.
+
 ```python
 mapping = {
     "Rd": "Road",
@@ -75,14 +84,44 @@ mapping = {
     "road": "Road"
 }
 ```
-The `schema.py` defines how we can relate these tags with each other and dump into the database, which makes it quite easier to get detailed insights. 
-Below are the fields that will be extracted out of the osm file
-nodes: { id, version, changeset, timestamp, user, uid, lat, long }
-nodes_tags: { id, key, value, type }
-ways: { id, user, uid, version, timestamp, changeset }
-ways_tags: { id, key, value, type }
-ways_nodes: { id, node_id, position }
 
+#### Postal code
+There were entries where postal code seemed malformed in terms of extra spaces. So to ensure other erroneous postal codes dont bother us later, I wrote a regex which would validate the length=6, starts with 411, and if starts with 411 and has space,underscore,hypen in between, then these characters will be trimmed off and we get the postal code.
+
+```xml
+		<tag k="addr:postcode" v="411 021"/> 
+		<tag k="addr:postcode" v="411 046"/> 
+		<tag k="addr:postcode" v="411 004"/> 
+		<tag k="addr:postcode" v="411 016"/> 
+```
+
+The “addr:postcode” is the standard usage and at some places the entry seems to be “addr:postal_code” which is again normalized with a postcode_mapper dictionary, where every occurance of postal_code will be replaced with standard postcode. This makes querying the database easier.
+
+```xml
+<tag k="postal_code" v="411001"/> 
+<tag k="postal_code" v="411046"/> 
+<tag k="postal_code" v="411027"/> 
+<tag k="postal_code" v="410506"/> 
+```
+
+Regex
+```python
+LEGAL_POSTAL_CODES = re.compile(r'^(411)[0-9]{3}$')
+ILLEGAL_POSTAL_CODES = re.compile(r'^(411) ?[0-9] ?[0-9]? [0-9]?$')
+```
+
+#### Phone numbers
+Phone numbers can be either landaline or mobile, with and without std/isd codes.
+My way of standardizing this is, by just modifying the phone numbers to give only the user part i.e. exclude the ISD and STD codes, as we are aware which part of the world the data is coming from.
+For ex:
++91-9876543210 is converted to 9876543210
++91 20 23442344 is converted to 23442344
+09850985012 is converted to 9850985012
+
+Regex 
+```python
+phone_number_re = re.compile(r'(91|0)(\s?|\-?)?(20)\s?([0-9]{4}\s?[0-9]{4})|(91|0)(\s?|\-?)?([789][0-9]{9})')
+```
 ### Draw insights out of data from database
 
 ##### Top 10 contributors from Pune
@@ -285,8 +324,7 @@ mysql> SELECT value Place, COUNT(*) Total FROM (SELECT value, tkey FROM ways_tag
 ### Challenges Faced
 ##### Errors
 1. Error: Duplicate entry for '2147483647' for key 'PRIMARY'.
-I had to change the datatype of 'id' column in nodes table from INTEGER to BIGINT as it exceeded the limit. You can refer below link for more details:
-http://stackoverflow.com/questions/18643648/mysql-insert-query-returns-error-1062-23000-duplicate-entry-2147483647-for
+I had to change the datatype of 'id' column in nodes table from INTEGER to BIGINT as it exceeded the limit. You can refer to the [link](http://stackoverflow.com/questions/18643648/mysql-insert-query-returns-error-1062-23000-duplicate-entry-2147483647-for) for more details:
 
 2. Error: Mysql threw unique key constraint errors when trying to dump nodes_tags.csv in table using mysql prompt LOAD cmd and skipped 3 rows when tried the same using mysqlimport. 
 
@@ -298,17 +336,24 @@ For this,
 - I first used some unix tools like 'awk' to get only the id from nodes.csv and nodes_tags.csv. Later inserted them into temporary tables without PRIMARY KEY and wrote a query to check whether data was redundant. Found out that the rows were getting skipped due to ',' being present in them and had to escape them.
 - The below cmd skipped the problematic rows
 ```bash
-> sudo mysqlimport --ignore-lines=1 --fields-terminated-by=',' --verbose --local -u root data_wrangling_schema /var/lib/mysql-files/ways_nodes.csv
+sudo mysqlimport --ignore-lines=1 --fields-terminated-by=',' --verbose --local -u root data_wrangling_schema /var/lib/mysql-files/ways_nodes.csv
 ```
 - The cmd was modified to include below optional option where we mention that fields may be enclosed by '"' which was the case and it resolved the issue
 ```bash
-> sudo mysqlimport --ignore-lines=1 --fields-terminated-by=',' --fields-optionally-enclosed-by='"' --verbose --local -u root data_wrangling_schema /var/lib/mysql-files/ways_tags.csv
+sudo mysqlimport --ignore-lines=1 --fields-terminated-by=',' --fields-optionally-enclosed-by='"' --verbose --local -u root data_wrangling_schema /var/lib/mysql-files/ways_tags.csv
 ```
 
 ### Additional Stats
 - As good as 40% data comes from the top 10 contributors on the list pasted above.
 - For people to contribute more to the openstreet map, there should be conventions/groups which can motivate others to contribute
 - Gamification will ensure people contribute more to the OSM
+
+### Anticipated problems due to improvement measures using gamification
+- Target Audience
+Though gamification can improve the level of participation; it is important to note that the target audience should be taken into picture. What I mean by that is, while designing pokemon go, the niantic mainly focused on the group of people who as yougsters watched pokemon in their teenage and later this propogate well. Like wise, OSM should also be able to target a specific set of audience by analyzing the contributions by age, part of the world, demographics (technology reach, enthusiasm, potential growth, etc)
+
+- Complex Analysis
+Another point to be considered is continuous analysis of the data as with gamification, there can be an outburst of data and to get on top of the leaderboard, people may dump in irrelevant info. This can be exactly opposite to our goal. So, scrutiny of the data will play important role; with all this said, the people at OSM are volunteers! So, I see some problems with gamification as well. Gamification for the employees/volunteers would make it a bit motivating.
 
 ### Conclusion
 I still feel that the data is very immature (at least for Pune). Gamification (in terms of credits and leaderboard stats) can be an important pillar which can make users contribute more to the project. Rating systems can be deployed once the data gets into a better shape, the way it is possible with Google Reviews.
